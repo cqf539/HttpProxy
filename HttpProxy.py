@@ -16,11 +16,21 @@ Description: http Proxy for security-platform(sp).
 
 from mitmproxy import controller, options, master
 from mitmproxy.proxy import ProxyServer, ProxyConfig
-from utils import Config
+from utils import Config, utils_log, utils_redis
 from urllib import parse
 
 
 class SpProxy(master.Master):
+    def __init__(self, opts, server):
+        master.Master.__init__(self, opts, server)
+        # 定义请求参数变量
+        self.req_method = ''
+        self.req_url = ''
+        self.req_cookies = ''
+        self.req_content = ''
+        self.req_ua = ''
+        self.req_referer = ''
+
     def run(self):
         try:
             master.Master.run(self)
@@ -30,7 +40,7 @@ class SpProxy(master.Master):
     @controller.handler
     #type(f) = mitmproxy.http.HTTPFlow
     def request(self, f):
-        # 定义请求参数变量
+        # # 定义请求参数变量
         self.req_method = ''
         self.req_url = ''
         self.req_cookies = ''
@@ -53,7 +63,8 @@ class SpProxy(master.Master):
         #exclude the ext of requests
         urlext = parse.urlparse(self.req_url)[2].split('.')[-1]
         # print(urlext)
-        ignoreext = ('js', 'css', 'png', 'jpg', 'gif', 'bmp', 'svg', 'exif', 'jpeg', 'exe', 'doc', 'docx', 'ppt', 'pptx', 'pdf', 'ico', 'wmv', 'avi', 'swf', 'apk', 'xml', 'xls', 'thmx')
+        #ignoreext = ('js', 'css', 'png', 'jpg', 'gif', 'bmp', 'svg', 'exif', 'jpeg', 'exe', 'doc', 'docx', 'ppt', 'pptx', 'pdf', 'ico', 'wmv', 'avi', 'swf', 'apk', 'xml', 'xls', 'thmx')
+        ignoreext = ('css', 'png', 'jpg', 'gif', 'bmp', 'svg', 'exif', 'jpeg', 'exe', 'doc', 'docx', 'ppt', 'pptx', 'pdf', 'ico', 'wmv', 'avi', 'swf', 'apk', 'xml', 'xls', 'thmx')
         # req_headers = f.request.headers
         if urlext not in ignoreext:
             info = {}
@@ -82,11 +93,17 @@ class SpProxy(master.Master):
     #     print("log", l.msg)
 
 if __name__ == "__main__":
-    opts = options.Options(cadir="~/.mitmproxy/")
-    config = ProxyConfig(opts)
-    server = ProxyServer(config)
-    m = SpProxy(opts, server)
-    m.run()
-    # print('main')
-    # prxport = Config.get_config('config.ini', 'proxy', 'port')
-    # print(prxport)
+    try:
+        proxylogger = utils_log.recordINFOlog('./log/http_proxy.log')
+        proxylogger.info('start up the http proxy')
+        #Get the configuration from the config.ini
+        prxport = Config.get_config('config.ini', 'proxy', 'port')
+        if(prxport != ''):
+            opts = options.Options(cadir="~/.mitmproxy/", listen_port=int(prxport))
+            config = ProxyConfig(opts)
+            server = ProxyServer(config)
+            m = SpProxy(opts, server)
+            m.run()
+    except BaseException as e:
+        print(e)
+
