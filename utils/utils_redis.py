@@ -16,6 +16,7 @@ def redis_conn(host='127.0.0,1', port=6379, db=0, pwd=''):
     except BaseException as e:
         print(e)
         # logger.error(e)
+        
         return ''
 
 
