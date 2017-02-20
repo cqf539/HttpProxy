@@ -10,7 +10,7 @@ Description: redis utils for security-platform(sp).
 import redis
 def redis_conn(host='127.0.0,1', port=6379, db=0, pwd=''):
     try:
-        pool = redis.ConnectionPool(host, port, db)
+        pool = redis.ConnectionPool(host, port, db, password=pwd)
         r = redis.Redis(connection_pool=pool)
         return r
     except BaseException as e:
